@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mkd.adtools.mapper.AdMapper">
+	<select id="selectAdList" resultType="AdData" parameterType="AdData">
+		select * from ad_data 
+		<where>
+			<if test="userid!=null and userid>=0">
+				and userid= #{userid}
+			</if>
+			<if test="adtype!=null and adtype>=0">
+				and adtype= #{adtype}
+			</if>
+			<if test="status!=null and status>=0">
+				and status= #{status}
+			</if>
+			<if test="id!=null and id>=0">
+				and id= #{id}
+			</if>
+			<if test="adname!=null">
+				and adname like "%" #{adname} "%"
+			</if>
+			<if test="true">
+				and status !=4 
+			</if>
+		</where>
+		order by createtime desc
+	</select>
+	
+	<select id="selectAdTypeList" resultType="AdType">
+		select * from ad_type where status = 0 ;
+	</select>
+	<update id="editAd">
+		update ad_data 
+		<set>
+			<if test="adtype!=null and adtype>0">
+				adtype= #{adtype},
+			</if>
+			<if test="adname!=null and adname!=''">
+				adname=#{adname},
+			</if>
+			<if test="gourl!=null and gourl!=''">
+				gourl = #{gourl},
+			</if>
+			<if test="adimg!=null and adimg!=''">
+				adimg = #{adimg},
+			</if>
+			<if test="userid!=null">
+				userid = #{userid},
+			</if>
+			<if test="price!=null and price>=0">
+				price = #{price},
+			</if>
+			<if test="status!=null and status>=0">
+				status = #{status}
+			</if>
+		</set>
+		where id=#{id}
+	</update> 
+	<insert id="insertAd" useGeneratedKeys="true" keyProperty="id">
+		insert into ad_data (userid,adtype,adimg,gourl,adname,status,note,createtime)
+		values(#{userid},#{adtype},#{adimg},#{gourl},#{adname},#{status},#{note},#{createtime})
+	</insert>
+	
+	<!-- 按广告ID排序 -->
+	<select id="selectEvtGroupByAd" resultType="AdEvtData">
+		select e.adid,a.adname,e.adtype,e.sitekey,e.tday,e.thour,sum(e.clicknum) as clicknum,sum(e.shownum) as shownum,sum(e.costnum) as costnum,sum(e.adcost) as adcost,sum(e.sitecost) as sitecost from ad_evt_data e left join ad_data a on e.adid=a.id
+		<where>
+			<if test="tday!=null">
+				and e.tday=#{tday} 
+			</if>
+			<if test="adtype!=null">
+				and e.adtype=#{adtype} 
+			</if>
+			<if test="adid!=null">
+				and e.adid=#{adid}
+			</if>
+			<if test="adname!=null">
+				and a.adname like "%" #{adname} "%"
+			</if>
+			<if test="sitekey!=null">
+				and e.sitekey=#{sitekey}
+			</if>
+		</where> 
+		 group by e.adid 
+	</select>
+
+	<select id="selectEvtGroupBySite" resultType="AdEvtData">
+		select e.sitekey,s.sitename,sum(e.clicknum) as clicknum,sum(e.shownum) as shownum,sum(e.costnum) as costnum,sum(e.sitecost) as sitecost,sum(e.adcost) as adcost from ad_evt_data e left join ad_site s on e.sitekey=s.sitekey
+		<where>
+			<if test="adid!=null">
+				and e.adid=#{adid}
+			</if>
+		    <if test="sitekey!=null">
+				and e.sitekey=#{sitekey}
+			</if>
+			<if test="tday!=null">
+				and e.tday=#{tday}
+			</if>
+		</where>
+		group by e.siteid 
+	</select>
+	<select id="selectEvtTotal" resultType="Integer">
+		select COALESCE(sum(num),0) from ad_evt_data 
+		<where>
+			<if test="tday!=null">
+				and tday=#{tday} 
+			</if>
+			<if test="thour!=null">
+				and thour = #{thour}
+			</if>
+			<if test="adtype!=null">
+				and adtype=#{adtype} 
+			</if>
+			<if test="adid!=null">
+				and adid=#{adid}
+			</if>
+			<if test="evttype!=null">
+				and evttype=#{evttype}
+			</if>
+			<if test="sitekey!=null">
+				and sitekey=#{sitekey}
+			</if>
+		</where>
+	</select>
+	<select id="selectSiteList" resultType="AdSite">
+		select * from ad_site 
+		<where>
+			<if test="sitekey!=null">
+			   and sitekey=#{sitekey}
+			</if>
+			<if test="status!=null">
+				and status=#{status}
+			</if>
+			<if test="id!=null">
+				and id=#{id}
+			</if>
+			<if test="sitename!=null">
+				and sitename like "%" #{sitename} "%"
+			</if>
+		</where>
+	</select>
+	<update id="updateSite">
+		update ad_site
+		<set>
+			<if test="sitename!=null"> 
+				sitename=#{sitename},
+			</if>
+			<if test="status!=null"> 
+				status=#{status},
+			</if>
+			<if test="price!=null">
+				price=#{price}
+			</if>
+		</set>
+		where id=#{id}
+	</update>
+	<select id="selectAdUserList" resultType="AdUser">
+	    select * from ad_user 
+	    <where>
+	    	<if test="usertype!=null">
+	    		and usertype=#{usertype}
+	    	</if>
+	    	<if test="status!=null">
+	    	    and status=#{status}
+	    	</if>
+	    </where>
+	</select>
+	<update id="updateUser">
+	    update ad_user set status=#{status} where id=#{id}
+	</update>
+	
+	<select id="selectPriceList" resultType="AdPrice">
+		select p.*,t.typename from ad_price p left join ad_type t on p.adtype=t.id 
+		<where>
+			<if test="adtype!=null">
+				and p.adtype=#{adtype}
+			</if>
+			<if test="grade!=null">
+				and p.grade = #{grade}
+			</if>
+		</where>
+	</select>
+	<update id="updatePrice">
+	    update ad_price set price=#{price} where id=#{id}
+	</update>
+</mapper>
